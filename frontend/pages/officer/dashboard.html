@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Setu | Officer Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-primary:#0D1B14; --bg-panel:#142A1F; --bg-panel-light:#1B3527;
+    --accent-copper:#C9A227; --accent-teal:#3E8E8E;
+    --text-primary:#EDEAE0; --text-muted:#8FA79C; --alert:#C1503F;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg-primary); color:var(--text-primary); font-family:'Inter',sans-serif; padding-bottom:40px;}
+
+  header{
+    padding:20px; display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--bg-panel-light);
+  }
+  header .title h1{font-family:'Space Grotesk',sans-serif; font-size:17px;}
+  header .title span{font-size:12px; color:var(--text-muted);}
+  .logout-btn{background:none; border:1px solid var(--bg-panel-light); color:var(--text-muted); padding:6px 12px; border-radius:8px; font-size:11px; cursor:pointer;}
+
+  main{padding:20px;}
+
+  .alert-banner{
+    background:rgba(193,80,63,0.12); border:1px solid var(--alert); color:var(--alert);
+    border-radius:10px; padding:10px 14px; font-size:12px; margin-bottom:16px; display:none;
+  }
+  .alert-banner.show{display:block;}
+
+  .summary-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:20px;}
+  .summary-card{
+    background:var(--bg-panel); border:1px solid var(--bg-panel-light); border-radius:14px; padding:14px;
+  }
+  .summary-card .label{font-size:11px; color:var(--text-muted); margin-bottom:6px;}
+  .summary-card .value{font-family:'JetBrains Mono',monospace; font-size:20px; color:var(--accent-copper);}
+  .summary-card .value.teal{color:var(--accent-teal);}
+
+  .section-header{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; margin-top:8px;
+  }
+  .section-header h2{font-family:'Space Grotesk',sans-serif; font-size:14px;}
+
+  .ward-select{
+    padding:8px 10px; background:var(--bg-panel); color:var(--text-primary);
+    border:1px solid var(--bg-panel-light); border-radius:8px; font-size:12px;
+  }
+
+  .ward-table{width:100%; border-collapse:collapse; margin-bottom:24px;}
+  .ward-table th{
+    text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:0.04em;
+    color:var(--text-muted); padding:8px 10px; border-bottom:1px solid var(--bg-panel-light);
+  }
+  .ward-table td{
+    padding:10px; font-size:13px; border-bottom:1px solid var(--bg-panel-light);
+  }
+  .ward-table tr:hover{background:var(--bg-panel);}
+  .ward-table .num{font-family:'JetBrains Mono',monospace; color:var(--accent-copper);}
+  .ward-table .ward-link{color:var(--accent-teal); cursor:pointer; font-weight:600;}
+
+  .ward-detail{
+    background:var(--bg-panel); border:1px solid var(--bg-panel-light); border-radius:14px; padding:18px; margin-bottom:20px;
+  }
+  .ward-detail .ward-detail-title{font-family:'Space Grotesk',sans-serif; font-size:15px; margin-bottom:14px; color:var(--accent-copper);}
+  .ward-detail-grid{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;}
+  .ward-detail-grid .stat .label{font-size:11px; color:var(--text-muted); margin-bottom:4px;}
+  .ward-detail-grid .stat .value{font-family:'JetBrains Mono',monospace; font-size:16px;}
+
+  .empty-state{color:var(--text-muted); font-size:13px; text-align:center; padding:30px 0;}
+  .loading-state{color:var(--text-muted); font-size:13px; text-align:center; padding:20px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">
+    <h1>Dashboard</h1>
+    <span id="officerMeta">Loading...</span>
+  </div>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</header>
+
+<main>
+  <div class="alert-banner" id="alertBanner"></div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="label">Total Collections</div>
+      <div class="value" id="sumCollections">—</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Total Weight (kg)</div>
+      <div class="value teal" id="sumWeight">—</div>
+    </div>
+    <div class="summary-card">
+      <div class="label">Total Credits</div>
+      <div class="value" id="sumCredits">—</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2>Ward Overview</h2>
+  </div>
+  <div id="overviewWrap"><div class="loading-state">Loading ward data...</div></div>
+
+  <div class="section-header">
+    <h2>Ward Detail</h2>
+    <select class="ward-select" id="wardSelect">
+      <option value="">Select a ward</option>
+    </select>
+  </div>
+  <div id="wardDetailWrap"></div>
+</main>
+
+<script src="../../js/api.js"></script>
+<script>
+// --- Auth guard ---
+const token = localStorage.getItem('esetu_token');
+const role = localStorage.getItem('esetu_role');
+if(!token){
+  window.location.href = 'login.html';
+}
+// Field officers / supervisors don't belong on this screen — send them to their own view.
+if(role === 'field_officer' || role === 'supervisor'){
+  window.location.href = 'collect.html';
+}
+
+let wardStatsCache = {};
+
+function logout(){
+  localStorage.clear();
+  window.location.href = 'login.html';
+}
+
+function fmtWard(w){
+  return w.replace(/_/g, ' ');
+}
+
+async function loadAlerts(){
+  try{
+    const alerts = await getThresholdAlerts();
+    const banner = document.getElementById('alertBanner');
+    const real = (alerts || []).filter(a => a && a !== 'No critical alerts');
+    if(real.length === 0){
+      banner.classList.remove('show');
+      return;
+    }
+    banner.textContent = real.join(' · ');
+    banner.classList.add('show');
+  }catch(e){
+    // Alerts are non-critical — fail silently rather than blocking the dashboard.
+  }
+}
+
+async function loadDashboard(){
+  document.getElementById('officerMeta').textContent =
+    `${fmtWard(role || '')}${localStorage.getItem('esetu_ward') ? ' · ' + localStorage.getItem('esetu_ward') + ' Ward' : ' · All Wards'}`;
+
+  try{
+    // Pull every drop-off point to discover the full set of wards that exist.
+    const dropoffs = await getDropoffs();
+    const wards = [...new Set((dropoffs || []).map(d => d.ward))].sort();
+
+    if(wards.length === 0){
+      document.getElementById('overviewWrap').innerHTML = '<div class="empty-state">No wards found yet.</div>';
+      return;
+    }
+
+    // Populate the ward drilldown selector.
+    const select = document.getElementById('wardSelect');
+    select.innerHTML = '<option value="">Select a ward</option>' +
+      wards.map(w => `<option value="${w}">${w}</option>`).join('');
+    select.addEventListener('change', () => {
+      if(select.value) showWardDetail(select.value);
+      else document.getElementById('wardDetailWrap').innerHTML = '';
+    });
+
+    // Fetch per-ward stats in parallel and cache them for the drilldown.
+    const results = await Promise.all(wards.map(async (w) => {
+      try{
+        const stats = await getWardStats(w);
+        return stats;
+      }catch(e){
+        return { ward: w, total_collections: 0, total_weight_kg: 0, total_credits: 0, alerts: [] };
+      }
+    }));
+    results.forEach(r => { wardStatsCache[r.ward] = r; });
+
+    // Aggregate totals across all wards for the top summary cards.
+    const totalCollections = results.reduce((sum, r) => sum + (r.total_collections || 0), 0);
+    const totalWeight = results.reduce((sum, r) => sum + (r.total_weight_kg || 0), 0);
+    const totalCredits = results.reduce((sum, r) => sum + (r.total_credits || 0), 0);
+
+    document.getElementById('sumCollections').textContent = totalCollections;
+    document.getElementById('sumWeight').textContent = totalWeight.toFixed(1);
+    document.getElementById('sumCredits').textContent = totalCredits;
+
+    // Render the all-wards overview table, sorted busiest ward first.
+    const sorted = [...results].sort((a, b) => (b.total_collections || 0) - (a.total_collections || 0));
+    const rows = sorted.map(r => `
+      <tr>
+        <td><span class="ward-link" onclick="selectWard('${r.ward}')">${r.ward}</span></td>
+        <td class="num">${r.total_collections}</td>
+        <td class="num">${(r.total_weight_kg || 0).toFixed(1)}</td>
+        <td class="num">${r.total_credits}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('overviewWrap').innerHTML = `
+      <table class="ward-table">
+        <thead>
+          <tr><th>Ward</th><th>Collections</th><th>Weight (kg)</th><th>Credits</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }catch(e){
+    document.getElementById('overviewWrap').innerHTML = '<div class="empty-state">Could not load ward data.</div>';
+  }
+}
+
+function selectWard(ward){
+  document.getElementById('wardSelect').value = ward;
+  showWardDetail(ward);
+}
+
+async function showWardDetail(ward){
+  const wrap = document.getElementById('wardDetailWrap');
+  wrap.innerHTML = '<div class="loading-state">Loading...</div>';
+
+  // Use the cached stats from the overview fetch if we have them, otherwise fetch fresh.
+  let stats = wardStatsCache[ward];
+  if(!stats){
+    try{
+      stats = await getWardStats(ward);
+    }catch(e){
+      wrap.innerHTML = '<div class="empty-state">Could not load this ward.</div>';
+      return;
+    }
+  }
+
+  wrap.innerHTML = `
+    <div class="ward-detail">
+      <div class="ward-detail-title">${ward}</div>
+      <div class="ward-detail-grid">
+        <div class="stat">
+          <div class="label">Collections</div>
+          <div class="value">${stats.total_collections}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Weight (kg)</div>
+          <div class="value">${(stats.total_weight_kg || 0).toFixed(1)}</div>
+        </div>
+        <div class="stat">
+          <div class="label">Credits</div>
+          <div class="value">${stats.total_credits}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+loadAlerts();
+loadDashboard();
+</script>
+</body>
+</html>

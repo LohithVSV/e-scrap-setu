@@ -1,7 +1,7 @@
 // js/api.js
 // Single place every page calls into. Change the base URL once, everything else just works.
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "http://localhost:8001";
 
 async function request(path, { method = "GET", body = null, auth = true } = {}) {
   const headers = { "Content-Type": "application/json" };
@@ -36,8 +36,11 @@ function loginCitizen(phone, password) {
   });
 }
 
-function loginOfficer(employeeId, password) {
-  return request("/auth/officer/login", { method: "POST", body: { employee_id: employeeId, password }, auth: false }).then((res) => {
+// FIXED: backend's OfficerLogin schema requires { employee_id, password } — there is
+// no email-based officer login. Takes a single object to match login.html's call:
+//   await loginOfficer({ employee_id, password })
+function loginOfficer({ employee_id, password }) {
+  return request("/auth/officer/login", { method: "POST", body: { employee_id, password }, auth: false }).then((res) => {
     localStorage.setItem("esetu_token", res.access_token);
     localStorage.setItem("esetu_role", res.role);
     localStorage.setItem("esetu_ward", res.ward || "");

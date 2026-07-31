@@ -57,8 +57,8 @@
 
   <form id="loginForm">
     <div class="form-row">
-      <label>Email</label>
-      <input type="email" id="email" required>
+      <label>Employee ID</label>
+      <input type="text" id="employeeId" required>
     </div>
     <div class="form-row">
       <label>Password</label>
@@ -81,14 +81,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   btn.textContent = 'Signing in...';
 
   try{
-    const email = document.getElementById('email').value;
+    const employee_id = document.getElementById('employeeId').value;
     const password = document.getElementById('password').value;
-    const res = await loginOfficer({ email, password });
+    // Backend expects { employee_id, password } — see backend/app/schemas/auth.py:OfficerLogin
+    const res = await loginOfficer({ employee_id, password });
 
-    // Expects api.js loginOfficer() to return { access_token, role, ward }
-    localStorage.setItem('esetu_token', res.access_token);
-    localStorage.setItem('esetu_role', res.role);
-    localStorage.setItem('esetu_ward', res.ward || '');
+    // api.js already stores esetu_token / esetu_role / esetu_ward in localStorage.
 
     // Route by role — field officers/supervisors go to the ops screen,
     // zonal/commissioner go straight to the dashboard.
@@ -98,7 +96,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       window.location.href = 'dashboard.html';
     }
   }catch(err){
-    errorEl.textContent = 'Invalid email or password.';
+    errorEl.textContent = 'Invalid employee ID or password.';
     errorEl.classList.add('show');
     btn.disabled = false;
     btn.textContent = 'Sign In';
