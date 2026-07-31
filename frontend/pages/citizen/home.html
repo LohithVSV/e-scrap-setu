@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Setu | Home</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-primary:#0D1B14; --bg-panel:#142A1F; --bg-panel-light:#1B3527;
+    --accent-copper:#C9A227; --accent-teal:#3E8E8E;
+    --text-primary:#EDEAE0; --text-muted:#8FA79C; --alert:#C1503F;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg-primary); color:var(--text-primary);
+    font-family:'Inter',sans-serif; padding-bottom:80px;
+  }
+  header{
+    padding:20px 20px 16px; display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--bg-panel-light);
+  }
+  header .greeting h1{font-family:'Space Grotesk',sans-serif; font-size:20px;}
+  header .greeting span{color:var(--text-muted); font-size:13px;}
+  .credit-badge{
+    background:var(--bg-panel); border:1px solid var(--accent-copper);
+    border-radius:12px; padding:8px 14px; text-align:right;
+  }
+  .credit-badge .num{font-family:'JetBrains Mono',monospace; color:var(--accent-copper); font-size:18px; font-weight:600;}
+  .credit-badge .lbl{font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;}
+
+  main{padding:20px;}
+  .quick-actions{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;}
+  .action-card{
+    background:var(--bg-panel); border:1px solid var(--bg-panel-light); border-radius:14px;
+    padding:18px; text-decoration:none; color:var(--text-primary);
+    display:flex; flex-direction:column; gap:8px; transition:border-color .2s;
+  }
+  .action-card:active{border-color:var(--accent-copper);}
+  .action-card .icon{font-size:24px;}
+  .action-card .title{font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700;}
+  .action-card .sub{font-size:11px; color:var(--text-muted);}
+
+  .section-title{
+    font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700;
+    margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .section-title a{font-size:12px; color:var(--accent-teal); text-decoration:none; font-weight:500;}
+
+  .dropoff-strip{display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; margin-bottom:24px;}
+  .dropoff-chip{
+    min-width:160px; background:var(--bg-panel); border:1px solid var(--bg-panel-light);
+    border-radius:12px; padding:14px; flex-shrink:0;
+  }
+  .dropoff-chip .name{font-size:13px; font-weight:600; margin-bottom:4px;}
+  .dropoff-chip .ward{font-size:11px; color:var(--text-muted); margin-bottom:8px;}
+  .load-bar{height:5px; background:var(--bg-panel-light); border-radius:4px; overflow:hidden;}
+  .load-bar-fill{height:100%; background:var(--accent-teal);}
+  .load-bar-fill.high{background:var(--alert);}
+
+  .activity-list{display:flex; flex-direction:column; gap:10px; margin-bottom:24px;}
+  .activity-item{
+    background:var(--bg-panel); border-radius:12px; padding:14px 16px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .activity-item .left .type{font-size:13px; font-weight:600;}
+  .activity-item .left .meta{font-size:11px; color:var(--text-muted); margin-top:2px;}
+  .activity-item .credits{font-family:'JetBrains Mono',monospace; color:var(--accent-copper); font-size:14px;}
+  .empty-state{color:var(--text-muted); font-size:13px; text-align:center; padding:20px;}
+
+  nav.bottom-nav{
+    position:fixed; bottom:0; left:0; right:0; background:var(--bg-panel);
+    border-top:1px solid var(--bg-panel-light); display:flex; justify-content:space-around;
+    padding:10px 0 14px;
+  }
+  nav.bottom-nav a{
+    color:var(--text-muted); text-decoration:none; font-size:10px;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  nav.bottom-nav a.active{color:var(--accent-copper);}
+  nav.bottom-nav .nav-icon{font-size:18px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="greeting">
+    <h1 id="userName">Hi there</h1>
+    <span>Let's find a drop-off point today</span>
+  </div>
+  <div class="credit-badge">
+    <div class="num" id="creditCount">—</div>
+    <div class="lbl">Green Credits</div>
+  </div>
+</header>
+
+<main>
+  <div class="quick-actions">
+    <a href="scan.html" class="action-card">
+      <div class="icon">📷</div>
+      <div class="title">Scan QR</div>
+      <div class="sub">Log a drop-off</div>
+    </a>
+    <a href="map.html" class="action-card">
+      <div class="icon">📍</div>
+      <div class="title">Find Drop-off</div>
+      <div class="sub">Nearest points</div>
+    </a>
+    <a href="redeem.html" class="action-card">
+      <div class="icon">🎁</div>
+      <div class="title">Redeem</div>
+      <div class="sub">Use your credits</div>
+    </a>
+    <a href="feedback.html" class="action-card">
+      <div class="icon">⭐</div>
+      <div class="title">Feedback</div>
+      <div class="sub">Rate a visit</div>
+    </a>
+  </div>
+
+  <div class="section-title">
+    <span>Nearby Drop-offs</span>
+    <a href="map.html">See all →</a>
+  </div>
+  <div class="dropoff-strip" id="dropoffStrip">
+    <div class="empty-state">Loading...</div>
+  </div>
+
+  <div class="section-title">
+    <span>Recent Activity</span>
+  </div>
+  <div class="activity-list" id="activityList">
+    <div class="empty-state">No collections logged yet</div>
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="home.html" class="active"><span class="nav-icon">🏠</span>Home</a>
+  <a href="map.html"><span class="nav-icon">📍</span>Map</a>
+  <a href="scan.html"><span class="nav-icon">📷</span>Scan</a>
+  <a href="redeem.html"><span class="nav-icon">🎁</span>Redeem</a>
+</nav>
+
+<script src="../../js/api.js"></script>
+<script>
+async function loadHome(){
+  try{
+    const user = JSON.parse(localStorage.getItem('esetu_user') || '{}');
+    const citizenId = user.id || localStorage.getItem('esetu_citizen_id');
+    document.getElementById('userName').textContent = 'Hi, ' + (user.name || 'Citizen');
+
+    const credits = await getCitizenCredits(citizenId);
+    document.getElementById('creditCount').textContent = credits.credits ?? credits.total ?? 0;
+
+    const dropoffs = await getDropoffs();
+    const strip = document.getElementById('dropoffStrip');
+    strip.innerHTML = dropoffs.slice(0,5).map(d => {
+      const pct = Math.round((d.current_load_kg / d.capacity_kg) * 100);
+      const high = pct >= (d.threshold_pct || 75);
+      return `<div class="dropoff-chip">
+        <div class="name">${d.name}</div>
+        <div class="ward">${d.ward}</div>
+        <div class="load-bar"><div class="load-bar-fill ${high?'high':''}" style="width:${pct}%"></div></div>
+      </div>`;
+    }).join('') || '<div class="empty-state">No drop-off points yet</div>';
+
+    const history = await getWardCollections ? [] : []; // placeholder, wire to real citizen history endpoint
+  }catch(e){
+    console.error('Home load failed', e);
+  }
+}
+loadHome();
+</script>
+</body>
+</html>

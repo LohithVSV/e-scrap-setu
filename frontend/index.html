@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Setu — GVMC E-Waste Network</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+  :root {
+    --bg-primary: #0D1B14;
+    --bg-panel: #142A1F;
+    --bg-panel-light: #1B3527;
+    --accent-copper: #C9A227;
+    --accent-teal: #3E8E8E;
+    --text-primary: #EDEAE0;
+    --text-muted: #8FA79C;
+    --alert: #C1503F;
+    --line: rgba(237, 234, 224, 0.1);
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* Background circuit texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+
+  /* ===== NAV ===== */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(13, 27, 20, 0.9);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; padding: 18px 32px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 20px; letter-spacing: -0.02em; }
+  .logo-mark { width: 12px; height: 12px; border-radius: 2px; background: var(--accent-copper); box-shadow: 0 0 12px var(--accent-copper); }
+  .nav-links { display: flex; gap: 32px; font-size: 14px; color: var(--text-muted); }
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-cta { display: flex; gap: 12px; }
+  .btn {
+    font-family: var(--font-body); font-weight: 600; font-size: 14px;
+    padding: 10px 20px; border-radius: 6px; border: 1px solid transparent;
+    cursor: pointer; transition: all 0.2s ease; display: inline-block;
+  }
+  .btn-primary { background: var(--accent-copper); color: #0D1B14; }
+  .btn-primary:hover { background: #DDB542; transform: translateY(-1px); }
+  .btn-ghost { border-color: var(--line); color: var(--text-primary); }
+  .btn-ghost:hover { border-color: var(--accent-teal); }
+
+  /* ===== HERO ===== */
+  .hero { padding: 100px 0 80px; position: relative; }
+  .hero .wrap { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px; align-items: center; }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em;
+    color: var(--accent-teal); text-transform: uppercase; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .eyebrow::before { content: ''; width: 6px; height: 6px; background: var(--accent-teal); border-radius: 50%; box-shadow: 0 0 8px var(--accent-teal); }
+  h1 {
+    font-family: var(--font-display); font-weight: 700; font-size: 52px;
+    line-height: 1.08; letter-spacing: -0.02em; margin-bottom: 22px;
+  }
+  h1 span { color: var(--accent-copper); }
+  .hero p { font-size: 17px; color: var(--text-muted); max-width: 460px; margin-bottom: 32px; }
+  .hero-actions { display: flex; gap: 14px; }
+
+  /* Circuit diagram */
+  .circuit-box { position: relative; aspect-ratio: 1/1; }
+  .circuit-box svg { width: 100%; height: 100%; }
+  .trace { fill: none; stroke: var(--accent-copper); stroke-width: 2; opacity: 0.55; }
+  .trace-pulse {
+    fill: none; stroke: var(--accent-copper); stroke-width: 2.5;
+    stroke-dasharray: 12 400; filter: drop-shadow(0 0 4px var(--accent-copper));
+    animation: pulse-travel 4s linear infinite;
+  }
+  @keyframes pulse-travel { to { stroke-dashoffset: -412; } }
+  .node { fill: var(--bg-panel-light); stroke: var(--accent-teal); stroke-width: 1.5; }
+  .node-label { font-family: var(--font-mono); font-size: 10px; fill: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* ===== STAT STRIP ===== */
+  .strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 28px 0; }
+  .strip .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+  .strip-item { font-family: var(--font-mono); font-size: 13px; color: var(--text-muted); }
+  .strip-item b { color: var(--accent-copper); font-size: 15px; }
+
+  /* ===== SECTION SHARED ===== */
+  section { padding: 100px 0; }
+  .section-head { max-width: 620px; margin-bottom: 56px; }
+  .section-tag { font-family: var(--font-mono); font-size: 12px; color: var(--accent-teal); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 14px; }
+  h2 { font-family: var(--font-display); font-size: 34px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 14px; }
+  .section-head p { color: var(--text-muted); font-size: 16px; }
+
+  /* ===== HOW IT WORKS ===== */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+  .steps::before {
+    content: ''; position: absolute; top: 28px; left: 8%; right: 8%; height: 1px;
+    background: repeating-linear-gradient(90deg, var(--accent-copper) 0 6px, transparent 6px 14px);
+    opacity: 0.5;
+  }
+  .step { position: relative; padding-right: 24px; }
+  .step-num {
+    font-family: var(--font-mono); font-size: 13px; color: var(--bg-primary); background: var(--accent-copper);
+    width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    margin-bottom: 20px; position: relative; z-index: 2; font-weight: 500;
+  }
+  .step h3 { font-family: var(--font-display); font-size: 18px; margin-bottom: 8px; font-weight: 600; }
+  .step p { font-size: 14px; color: var(--text-muted); }
+
+  /* ===== PROBLEM / IMAGE SECTION ===== */
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+  .split img { width: 100%; border-radius: 8px; border: 1px solid var(--line); display: block; }
+  .split-text .section-tag { margin-bottom: 14px; }
+  .split-text p { color: var(--text-muted); margin-bottom: 16px; }
+  .split-text ul { list-style: none; margin-top: 20px; }
+  .split-text li { display: flex; gap: 10px; margin-bottom: 12px; font-size: 14px; color: var(--text-primary); }
+  .split-text li::before { content: '×'; color: var(--alert); font-weight: 700; font-family: var(--font-mono); }
+
+  /* ===== TWO AUDIENCES ===== */
+  .audience-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .audience-card {
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 36px; position: relative; overflow: hidden;
+  }
+  .audience-card::after {
+    content: ''; position: absolute; top: -40%; right: -20%; width: 200px; height: 200px;
+    background: radial-gradient(circle, var(--accent-teal) 0%, transparent 70%); opacity: 0.08;
+  }
+  .audience-card .section-tag { color: var(--accent-copper); }
+  .audience-card h3 { font-family: var(--font-display); font-size: 22px; margin: 10px 0 18px; }
+  .audience-card ul { list-style: none; }
+  .audience-card li {
+    padding: 12px 0; border-top: 1px solid var(--line); font-size: 14px; color: var(--text-muted);
+    display: flex; gap: 10px;
+  }
+  .audience-card li:first-of-type { border-top: none; }
+  .audience-card li::before { content: '›'; color: var(--accent-teal); font-weight: 700; }
+
+  /* ===== FEATURE GRID ===== */
+  .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .feature-card {
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px; padding: 26px;
+    transition: border-color 0.2s ease;
+  }
+  .feature-card:hover { border-color: var(--accent-copper); }
+  .feature-icon {
+    width: 38px; height: 38px; border-radius: 8px; background: var(--bg-panel-light);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    color: var(--accent-copper); font-family: var(--font-mono); font-size: 15px;
+  }
+  .feature-card h4 { font-family: var(--font-display); font-size: 16px; margin-bottom: 8px; font-weight: 600; }
+  .feature-card p { font-size: 13.5px; color: var(--text-muted); }
+
+  /* ===== CTA ===== */
+  .cta-section { text-align: center; padding: 90px 0; }
+  .cta-section h2 { font-size: 36px; margin-bottom: 16px; }
+  .cta-section p { color: var(--text-muted); margin-bottom: 32px; }
+  .cta-actions { display: flex; gap: 16px; justify-content: center; }
+
+  /* ===== FOOTER ===== */
+  footer { border-top: 1px solid var(--line); padding: 40px 0; }
+  footer .wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  footer p { font-size: 13px; color: var(--text-muted); }
+  .footer-tag { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 860px) {
+    .hero .wrap { grid-template-columns: 1fr; }
+    .circuit-box { max-width: 380px; margin: 0 auto; }
+    h1 { font-size: 38px; }
+    .steps { grid-template-columns: 1fr 1fr; gap: 32px; }
+    .steps::before { display: none; }
+    .split { grid-template-columns: 1fr; }
+    .audience-grid { grid-template-columns: 1fr; }
+    .feature-grid { grid-template-columns: 1fr 1fr; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 520px) {
+    .steps { grid-template-columns: 1fr; }
+    .feature-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 30px; }
+    .wrap { padding: 0 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trace-pulse { animation: none; }
+  }
+
+  :focus-visible { outline: 2px solid var(--accent-copper); outline-offset: 2px; }
+</style>
+</head>
+<div id="assist-btn" onclick="toggleAssist()">💬</div>
+
+<div id="assist-panel">
+  <div id="assist-header">
+    <span>E-Setu Assistant</span>
+    <span id="assist-close" onclick="toggleAssist()">✕</span>
+  </div>
+  <div id="assist-messages"></div>
+  <div id="assist-input-row">
+    <input id="assist-input" type="text" placeholder="Ask me anything about E-Setu...">
+    <button onclick="sendAssistMessage()">Send</button>
+  </div>
+</div>
+
+<style>
+  #assist-btn {
+    position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px;
+    background: var(--accent-copper); border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; font-size: 24px; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(201,162,39,0.4); z-index: 100;
+  }
+  #assist-panel {
+    display: none; position: fixed; bottom: 90px; right: 24px; width: 340px; height: 460px;
+    background: var(--bg-panel); border: 1px solid var(--line); border-radius: 12px;
+    flex-direction: column; overflow: hidden; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  #assist-panel.open { display: flex; }
+  #assist-header {
+    background: var(--bg-panel-light); padding: 14px 16px; font-family: var(--font-display);
+    font-weight: 600; display: flex; justify-content: space-between; align-items: center;
+  }
+  #assist-close { cursor: pointer; color: var(--text-muted); }
+  #assist-messages { flex: 1; overflow-y: auto; padding: 14px; font-size: 13.5px; }
+  .assist-msg { margin-bottom: 12px; padding: 8px 12px; border-radius: 8px; max-width: 85%; }
+  .assist-msg.user { background: var(--accent-teal); color: #0D1B14; margin-left: auto; }
+  .assist-msg.bot { background: var(--bg-panel-light); color: var(--text-primary); }
+  #assist-input-row { display: flex; border-top: 1px solid var(--line); padding: 10px; gap: 8px; }
+  #assist-input {
+    flex: 1; background: var(--bg-panel-light); border: 1px solid var(--line); border-radius: 6px;
+    padding: 8px 10px; color: var(--text-primary); font-family: var(--font-body); font-size: 13px;
+  }
+</style>
+
+<script>
+  function toggleAssist() {
+    document.getElementById('assist-panel').classList.toggle('open');
+  }
+
+  async function sendAssistMessage() {
+    const input = document.getElementById('assist-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    addAssistMsg(msg, 'user');
+    input.value = '';
+
+    try {
+      const res = await fetch(`${API_BASE || 'http://localhost:8000'}/assistant/ask`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: msg })
+      });
+      const data = await res.json();
+      addAssistMsg(data.answer, 'bot');
+    } catch (e) {
+      addAssistMsg("Sorry, I couldn't reach the assistant right now.", 'bot');
+    }
+  }
+
+  function addAssistMsg(text, sender) {
+    const box = document.getElementById('assist-messages');
+    const div = document.createElement('div');
+    div.className = `assist-msg ${sender}`;
+    div.textContent = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  document.getElementById('assist-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendAssistMessage();
+  });
+</script>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="logo"><span class="logo-mark"></span> E-SETU</div>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#citizens">For citizens</a>
+      <a href="#officials">For GVMC</a>
+      <a href="#features">Features</a>
+    </div>
+    <div class="nav-cta">
+      <a href="pages/officer/login.html" class="btn btn-ghost">Officer Login</a>
+      <a href="pages/citizen/home.html" class="btn btn-primary">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">GVMC · Ward-to-Recycler Network</div>
+      <h1>Every e-waste drop, <span>mapped, tracked,<br>and rewarded.</span></h1>
+      <p>E-Setu connects citizens, field officers, and the Commissioner's Office on one digital register — from the QR-coded drop-off point to the recycler.</p>
+      <div class="hero-actions">
+        <a href="#how" class="btn btn-primary">See how it works</a>
+        <a href="#officials" class="btn btn-ghost">For GVMC officials</a>
+      </div>
+    </div>
+    <div class="circuit-box">
+      <svg viewBox="0 0 400 400">
+        <path class="trace" d="M60,80 L60,180 L200,180 L200,80" />
+        <path class="trace" d="M200,80 L340,80 L340,200" />
+        <path class="trace" d="M60,180 L60,320 L200,320 L200,260" />
+        <path class="trace" d="M200,260 L340,260 L340,200" />
+        <path class="trace-pulse" d="M60,80 L60,180 L200,180 L200,80 L340,80 L340,200 L200,200 L200,260 L60,260 L60,320 L200,320 L200,260 L340,260 L340,200" />
+
+        <circle class="node" cx="60" cy="80" r="22" />
+        <text class="node-label" x="60" y="47" text-anchor="middle">Citizen</text>
+
+        <circle class="node" cx="200" cy="180" r="22" />
+        <text class="node-label" x="200" y="147" text-anchor="middle">QR Drop-off</text>
+
+        <circle class="node" cx="340" cy="80" r="18" />
+        <text class="node-label" x="340" y="50" text-anchor="middle">Field Officer</text>
+
+        <circle class="node" cx="200" cy="260" r="18" />
+        <text class="node-label" x="200" y="300" text-anchor="middle">Ward Dashboard</text>
+
+        <circle class="node" cx="60" cy="320" r="18" />
+        <text class="node-label" x="60" y="352" text-anchor="middle">Green Credits</text>
+
+        <circle class="node" cx="340" cy="200" r="20" />
+        <text class="node-label" x="340" y="235" text-anchor="middle">Commissioner</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="wrap">
+    <div class="strip-item"><b>6</b> core GVMC requirements met</div>
+    <div class="strip-item"><b>30</b> wards, one live register</div>
+    <div class="strip-item"><b>Real-time</b> threshold alerts</div>
+    <div class="strip-item"><b>PWA</b> — installs like an app, runs like a site</div>
+  </div>
+</div>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-tag">The flow</div>
+      <h2>How it works</h2>
+      <p>Four steps, one register — from a citizen's phone to the Commissioner's screen.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <h3>Find &amp; scan</h3>
+        <p>Citizen finds the nearest drop-off on the map and scans its QR code.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <h3>Deposit &amp; verify</h3>
+        <p>Field officer confirms the deposit; it's logged to the digital register instantly.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <h3>Earn credits</h3>
+        <p>Citizen earns Green Credits, redeemable for bus passes and utility discounts.</p>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <h3>City sees it live</h3>
+        <p>Ward and Commissioner dashboards update in real time, with threshold alerts.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="problem">
+  <div class="wrap split">
+    <div class="split-text">
+      <div class="section-tag">The gap today</div>
+      <h2>E-waste in Vizag has no digital trail</h2>
+      <p>Existing tools solve part of the problem — but none are built for a municipal corporation running a citizen-facing, ward-to-Commissioner network.</p>
+      <ul>
+        <li>No public ward-level dashboard for field officers</li>
+        <li>No Commissioner's-office view across all wards</li>
+        <li>No citizen rewards tied to municipal collection points</li>
+        <li>No QR-based navigation to the nearest drop-off</li>
+      </ul>
+    </div>
+    <img src="assets/images/circuit-board.jpg" alt="Close-up of an e-waste circuit board" loading="lazy">
+  </div>
+</section>
+
+<section id="citizens">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-tag">Two sides, one register</div>
+      <h2>Built for citizens and officials alike</h2>
+    </div>
+    <div class="audience-grid">
+      <div class="audience-card" id="citizens">
+        <div class="section-tag">For citizens</div>
+        <h3>Find, deposit, earn</h3>
+        <ul>
+          <li>Map of nearest QR drop-off points</li>
+          <li>Green Credits for every deposit</li>
+          <li>Redeem for bus passes &amp; bill discounts</li>
+          <li>Collection history &amp; certificates</li>
+          <li>Rate the experience in one tap</li>
+        </ul>
+      </div>
+      <div class="audience-card" id="officials">
+        <div class="section-tag">For GVMC officials</div>
+        <h3>See every ward, live</h3>
+        <ul>
+          <li>Role-based login — Officer, Supervisor, Commissioner</li>
+          <li>Ward-level live collection data</li>
+          <li>Cross-ward view for the Commissioner's Office</li>
+          <li>Automatic threshold &amp; overflow alerts</li>
+          <li>Photo &amp; GPS-verified collection logs</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="section-tag">Under the hood</div>
+      <h2>What's in the network</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">◱</div>
+        <h4>QR-coded drop-offs</h4>
+        <p>Every collection point gets a unique, scannable code tied to its ward.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">▤</div>
+        <h4>Digital register</h4>
+        <p>Every deposit is a timestamped, auditable row — no paper logs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">◈</div>
+        <h4>Green Credits</h4>
+        <p>Points for every deposit, redeemable for real municipal benefits.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚠</div>
+        <h4>Threshold alerts</h4>
+        <p>Supervisors are notified automatically before a point overflows.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">☰</div>
+        <h4>Role-based access</h4>
+        <p>Officer, Supervisor, Zonal Officer, Commissioner — each sees only what's theirs.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">★</div>
+        <h4>Feedback loop</h4>
+        <p>A simple 1–5 star rating after every collection, closing the loop.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="wrap">
+    <h2>Ready to bridge the gap?</h2>
+    <p>Built for GVMC. Ready for every ward.</p>
+    <div class="cta-actions">
+      <a href="pages/citizen/home.html" class="btn btn-primary">Launch citizen app</a>
+      <a href="pages/officer/login.html" class="btn btn-ghost">Officer dashboard</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>© 2026 E-Setu — built for GVMC</p>
+    <p class="footer-tag">FastAPI · PostgreSQL · PWA</p>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Setu | Redeem Credits</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-primary:#0D1B14; --bg-panel:#142A1F; --bg-panel-light:#1B3527;
+    --accent-copper:#C9A227; --accent-teal:#3E8E8E;
+    --text-primary:#EDEAE0; --text-muted:#8FA79C; --alert:#C1503F;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:var(--bg-primary); color:var(--text-primary); font-family:'Inter',sans-serif; padding-bottom:80px;}
+
+  header{padding:24px 20px; text-align:center; border-bottom:1px solid var(--bg-panel-light);}
+  header h1{font-family:'Space Grotesk',sans-serif; font-size:18px; margin-bottom:12px;}
+  .balance{
+    display:inline-block; background:var(--bg-panel); border:1px solid var(--accent-copper);
+    border-radius:14px; padding:14px 28px;
+  }
+  .balance .num{font-family:'JetBrains Mono',monospace; font-size:28px; color:var(--accent-copper); font-weight:700;}
+  .balance .lbl{font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;}
+
+  main{padding:20px;}
+  .category-title{
+    font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700;
+    margin:20px 0 12px; color:var(--accent-teal);
+  }
+  .reward-grid{display:flex; flex-direction:column; gap:12px;}
+  .reward-card{
+    background:var(--bg-panel); border:1px solid var(--bg-panel-light); border-radius:14px;
+    padding:16px 18px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .reward-card .info .title{font-size:14px; font-weight:600; margin-bottom:4px;}
+  .reward-card .info .desc{font-size:11px; color:var(--text-muted);}
+  .reward-card .cost{
+    display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; margin-left:12px;
+  }
+  .reward-card .cost .price{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--accent-copper); font-weight:600;}
+  .redeem-btn{
+    padding:8px 16px; background:var(--accent-copper); color:var(--bg-primary); border:none;
+    border-radius:8px; font-family:'Inter',sans-serif; font-weight:600; font-size:12px; cursor:pointer;
+  }
+  .redeem-btn:disabled{background:var(--bg-panel-light); color:var(--text-muted); cursor:not-allowed;}
+
+  .toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--bg-panel); border:1px solid var(--accent-teal); color:var(--text-primary);
+    padding:12px 20px; border-radius:10px; font-size:13px; display:none;
+  }
+  .toast.show{display:block;}
+
+  nav.bottom-nav{
+    position:fixed; bottom:0; left:0; right:0; background:var(--bg-panel);
+    border-top:1px solid var(--bg-panel-light); display:flex; justify-content:space-around;
+    padding:10px 0 14px;
+  }
+  nav.bottom-nav a{color:var(--text-muted); text-decoration:none; font-size:10px; display:flex; flex-direction:column; align-items:center; gap:4px;}
+  nav.bottom-nav a.active{color:var(--accent-copper);}
+  nav.bottom-nav .nav-icon{font-size:18px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Redeem Green Credits</h1>
+  <div class="balance">
+    <div class="num" id="balanceNum">—</div>
+    <div class="lbl">Available Credits</div>
+  </div>
+</header>
+
+<main>
+  <div class="category-title">🚌 Transit</div>
+  <div class="reward-grid" id="transitRewards"></div>
+
+  <div class="category-title">💡 Utility Discounts</div>
+  <div class="reward-grid" id="utilityRewards"></div>
+
+  <div class="category-title">🎟️ Partner Vouchers</div>
+  <div class="reward-grid" id="voucherRewards"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<nav class="bottom-nav">
+  <a href="home.html"><span class="nav-icon">🏠</span>Home</a>
+  <a href="map.html"><span class="nav-icon">📍</span>Map</a>
+  <a href="scan.html"><span class="nav-icon">📷</span>Scan</a>
+  <a href="redeem.html" class="active"><span class="nav-icon">🎁</span>Redeem</a>
+</nav>
+
+<script src="../../js/api.js"></script>
+<script>
+// Static reward catalog for the demo — in production this would come from a
+// GVMC-approved rewards table, since redemption requires inter-departmental MOUs
+// (bus passes, utility discounts) that E-Setu itself can't unilaterally fulfill.
+const REWARDS = {
+  transit: [
+    { name: "1-Day APSRTC Bus Pass", cost: 50, desc: "Valid on city routes" },
+    { name: "3-Day APSRTC Bus Pass", cost: 130, desc: "Valid on city routes" },
+  ],
+  utility: [
+    { name: "₹50 off GVMC Water Bill", cost: 60, desc: "Applied next billing cycle" },
+    { name: "₹100 off Property Tax", cost: 110, desc: "One-time credit" },
+  ],
+  voucher: [
+    { name: "₹100 Local Store Voucher", cost: 90, desc: "Partner kirana stores" },
+    { name: "Movie Ticket Discount", cost: 70, desc: "Partner cinema chain" },
+  ],
+};
+
+let balance = 0;
+
+function rewardCard(r){
+  const affordable = balance >= r.cost;
+  return `<div class="reward-card">
+    <div class="info">
+      <div class="title">${r.name}</div>
+      <div class="desc">${r.desc}</div>
+    </div>
+    <div class="cost">
+      <div class="price">${r.cost} cr</div>
+      <button class="redeem-btn" ${affordable ? '' : 'disabled'} onclick="redeem('${r.name}', ${r.cost})">
+        ${affordable ? 'Redeem' : 'Locked'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function renderRewards(){
+  document.getElementById('transitRewards').innerHTML = REWARDS.transit.map(rewardCard).join('');
+  document.getElementById('utilityRewards').innerHTML = REWARDS.utility.map(rewardCard).join('');
+  document.getElementById('voucherRewards').innerHTML = REWARDS.voucher.map(rewardCard).join('');
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+async function redeem(name, cost){
+  try{
+    const citizenId = Number(localStorage.getItem('esetu_citizen_id'));
+    await redeemCredits({ citizen_id: citizenId || 0, amount: cost, item: name });
+    balance -= cost;
+    document.getElementById('balanceNum').textContent = balance;
+    renderRewards();
+    showToast(`Redeemed: ${name}`);
+  }catch(e){
+    showToast('Redemption failed — try again.');
+  }
+}
+
+async function init(){
+  try{
+    const data = await getCitizenCredits();
+    balance = data.total ?? data.credits ?? 0;
+  }catch(e){
+    balance = 0;
+  }
+  document.getElementById('balanceNum').textContent = balance;
+  renderRewards();
+}
+init();
+</script>
+</body>
+</html>
