@@ -12,7 +12,7 @@ def test_root_endpoint():
 
 def test_citizen_phone_login_and_reward_tracking():
     client = TestClient(app)
-    phone = '+919999000111'
+    phone = f'+919999000{__import__("random").randint(100, 999)}'
 
     signup_response = client.post('/auth/citizen/signup', json={
         'name': 'Asha',
@@ -32,7 +32,7 @@ def test_citizen_phone_login_and_reward_tracking():
         'ward': 'Ward 1',
         'latitude': 17.6868,
         'longitude': 83.2185,
-        'qr_code': 'demo-phone-point',
+        'qr_code': f'demo-phone-point-{phone}',
     })
     assert dropoff_response.status_code == 200
 
@@ -47,3 +47,11 @@ def test_citizen_phone_login_and_reward_tracking():
     rewards_response = client.get(f'/rewards/phone/{phone}')
     assert rewards_response.status_code == 200
     assert rewards_response.json()['credits'] >= 1
+
+
+def test_assistant_answers_common_questions():
+    client = TestClient(app)
+    response = client.post('/assistant/ask', json={'question': 'How do I earn credits?'})
+
+    assert response.status_code == 200
+    assert 'credits' in response.json()['answer'].lower()

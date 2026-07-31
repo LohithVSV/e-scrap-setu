@@ -114,6 +114,10 @@ function submitFeedback(collectionId, stars, comment = "") {
   return request("/feedback", { method: "POST", body: { collection_id: collectionId, stars, comment } });
 }
 
+function askAssistant(question) {
+  return request("/assistant/ask", { method: "POST", body: { question }, auth: false });
+}
+
 window.api = {
   loginCitizen,
   loginOfficer,
@@ -143,3 +147,4 @@ window.redeemCredits = redeemCredits;
 window.getWardStats = getWardStats;
 window.getThresholdAlerts = getThresholdAlerts;
 window.submitFeedback = submitFeedback;
+window.askAssistant = askAssistant;

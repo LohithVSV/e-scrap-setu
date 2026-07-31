@@ -64,6 +64,18 @@
     border-radius:10px; font-size:13px; display:none;
   }
   .toast.show{display:block;}
+
+  .assistant-fab{position:fixed; right:18px; bottom:18px; width:54px; height:54px; border-radius:50%; border:none; background:var(--accent-copper); color:var(--bg-primary); font-size:22px; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:20;}
+  .assistant-panel{position:fixed; right:18px; bottom:84px; width:min(340px, calc(100vw - 24px)); max-height:420px; background:var(--bg-panel); border:1px solid var(--bg-panel-light); border-radius:16px; display:none; flex-direction:column; overflow:hidden; box-shadow:0 12px 32px rgba(0,0,0,0.35); z-index:20;}
+  .assistant-panel.open{display:flex;}
+  .assistant-panel-header{padding:12px 14px; display:flex; justify-content:space-between; align-items:center; background:var(--bg-panel-light); font-weight:600; font-size:14px;}
+  .assistant-messages{flex:1; padding:12px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; font-size:13px;}
+  .assistant-message{padding:8px 10px; border-radius:10px; max-width:88%; line-height:1.4;}
+  .assistant-message.user{background:var(--accent-teal); color:var(--bg-primary); align-self:flex-end;}
+  .assistant-message.bot{background:var(--bg-panel-light); color:var(--text-primary); align-self:flex-start;}
+  .assistant-input{display:flex; border-top:1px solid var(--bg-panel-light); padding:10px; gap:8px;}
+  .assistant-input input{flex:1; border:none; border-radius:8px; padding:8px 10px; background:var(--bg-primary); color:var(--text-primary);}
+  .assistant-input button{border:none; border-radius:8px; padding:8px 12px; background:var(--accent-copper); color:var(--bg-primary); font-weight:600; cursor:pointer;}
 </style>
 </head>
 <body>
@@ -111,8 +123,54 @@
 
 <div class="toast" id="toast"></div>
 
+<button class="assistant-fab" onclick="toggleAssistant()">💬</button>
+<div class="assistant-panel" id="assistantPanel">
+  <div class="assistant-panel-header">
+    <span>E-Setu Assistant</span>
+    <button class="assistant-close" onclick="toggleAssistant()" style="background:none;border:none;color:inherit;cursor:pointer;">✕</button>
+  </div>
+  <div class="assistant-messages" id="assistantMessages"></div>
+  <div class="assistant-input">
+    <input id="assistantInput" type="text" placeholder="Ask about collections or credits" />
+    <button onclick="sendAssistantMessage()">Send</button>
+  </div>
+</div>
+
 <script src="../../js/api.js"></script>
 <script>
+function toggleAssistant(){
+  document.getElementById('assistantPanel').classList.toggle('open');
+}
+
+function addAssistantMessage(text, sender){
+  const box = document.getElementById('assistantMessages');
+  const msg = document.createElement('div');
+  msg.className = `assistant-message ${sender}`;
+  msg.textContent = text;
+  box.appendChild(msg);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendAssistantMessage(){
+  const input = document.getElementById('assistantInput');
+  const text = input.value.trim();
+  if(!text) return;
+  addAssistantMessage(text, 'user');
+  input.value = '';
+  try{
+    const res = await askAssistant(text);
+    addAssistantMessage(res.answer, 'bot');
+  }catch(e){
+    addAssistantMessage('Sorry, I could not reach the assistant right now.', 'bot');
+  }
+}
+
+function initAssistant(){
+  document.getElementById('assistantInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') sendAssistantMessage();
+  });
+}
+
 if(!localStorage.getItem('esetu_token')){
   window.location.href = 'login.html';
 }
@@ -203,6 +261,7 @@ async function submitManual(){
   }
 }
 
+initAssistant();
 loadPending();
 populateDropoffs();
 </script>
