@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Setu | Feedback</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-primary:#0D1B14; --bg-panel:#142A1F; --bg-panel-light:#1B3527;
+    --accent-copper:#C9A227; --accent-teal:#3E8E8E;
+    --text-primary:#EDEAE0; --text-muted:#8FA79C; --alert:#C1503F;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg-primary); color:var(--text-primary);
+    font-family:'Inter',sans-serif; padding-bottom:80px;
+  }
+  header{
+    padding:20px; display:flex; align-items:center; gap:12px;
+    border-bottom:1px solid var(--bg-panel-light);
+  }
+  header .back{color:var(--text-muted); text-decoration:none; font-size:20px;}
+  header h1{font-family:'Space Grotesk',sans-serif; font-size:18px;}
+
+  main{padding:20px;}
+  .card{
+    background:var(--bg-panel); border:1px solid var(--bg-panel-light);
+    border-radius:14px; padding:20px; margin-bottom:16px;
+  }
+  label{display:block; font-size:12px; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;}
+  select, input[type="text"], input[type="number"], textarea{
+    width:100%; background:var(--bg-primary); border:1px solid var(--bg-panel-light);
+    border-radius:10px; padding:12px; color:var(--text-primary); font-family:'Inter',sans-serif;
+    font-size:14px; margin-bottom:16px;
+  }
+  textarea{resize:vertical; min-height:90px;}
+
+  .stars{display:flex; gap:8px; margin-bottom:20px; justify-content:center;}
+  .star{font-size:36px; cursor:pointer; color:var(--bg-panel-light); transition:color .15s, transform .15s; user-select:none;}
+  .star.filled{color:var(--accent-copper);}
+  .star:active{transform:scale(0.9);}
+
+  .submit-btn{
+    width:100%; padding:14px; border:none; border-radius:12px;
+    background:var(--accent-copper); color:var(--bg-primary);
+    font-weight:700; font-size:15px; cursor:pointer;
+  }
+  .submit-btn:disabled{opacity:0.5; cursor:not-allowed;}
+
+  .status-msg{font-size:13px; text-align:center; margin-top:12px; min-height:18px;}
+  .status-msg.ok{color:var(--accent-teal);}
+  .status-msg.err{color:var(--alert);}
+
+  nav.bottom-nav{
+    position:fixed; bottom:0; left:0; right:0; background:var(--bg-panel);
+    border-top:1px solid var(--bg-panel-light); display:flex; justify-content:space-around;
+    padding:10px 0 14px;
+  }
+  nav.bottom-nav a{
+    color:var(--text-muted); text-decoration:none; font-size:10px;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+  }
+  nav.bottom-nav a.active{color:var(--accent-copper);}
+  nav.bottom-nav .nav-icon{font-size:18px;}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="home.html" class="back">←</a>
+  <h1>Rate Your Visit</h1>
+</header>
+
+<main>
+  <div class="card">
+    <label for="collectionSelect" id="collectionLabel">Which pickup?</label>
+    <select id="collectionSelect" style="display:none;"></select>
+    <input type="number" id="collectionIdInput" placeholder="Collection ID" style="display:none;">
+
+    <label>How was it?</label>
+    <div class="stars" id="starRow">
+      <span class="star" data-val="1">★</span>
+      <span class="star" data-val="2">★</span>
+      <span class="star" data-val="3">★</span>
+      <span class="star" data-val="4">★</span>
+      <span class="star" data-val="5">★</span>
+    </div>
+
+    <label for="comment">Comments (optional)</label>
+    <textarea id="comment" placeholder="Anything we should know?"></textarea>
+
+    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Submit Feedback</button>
+    <div class="status-msg" id="statusMsg"></div>
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <a href="home.html"><span class="nav-icon">🏠</span>Home</a>
+  <a href="map.html"><span class="nav-icon">📍</span>Map</a>
+  <a href="scan.html"><span class="nav-icon">📷</span>Scan</a>
+  <a href="redeem.html"><span class="nav-icon">🎁</span>Redeem</a>
+</nav>
+
+<script src="../../js/api.js"></script>
+<script>
+let selectedStars = 0;
+
+function renderStars(){
+  document.querySelectorAll('.star').forEach(s => {
+    s.classList.toggle('filled', Number(s.dataset.val) <= selectedStars);
+  });
+}
+
+document.getElementById('starRow').addEventListener('click', (e) => {
+  if(!e.target.classList.contains('star')) return;
+  selectedStars = Number(e.target.dataset.val);
+  renderStars();
+});
+
+async function initFeedbackForm(){
+  const select = document.getElementById('collectionSelect');
+  const manualInput = document.getElementById('collectionIdInput');
+  const label = document.getElementById('collectionLabel');
+
+  // Prefer a dropdown of the citizen's real collections if that endpoint exists.
+  if (typeof window.api?.getCitizenCollections === 'function') {
+    try {
+      const citizenId = JSON.parse(localStorage.getItem('esetu_user') || '{}').id
+        || localStorage.getItem('esetu_citizen_id');
+      const collections = await window.api.getCitizenCollections(citizenId);
+
+      if (collections && collections.length){
+        select.innerHTML = collections.map(c =>
+          `<option value="${c.id}">${c.item_type || 'Collection'} — ${new Date(c.created_at).toLocaleDateString()}</option>`
+        ).join('');
+        select.style.display = 'block';
+        return;
+      }
+    } catch(e){
+      console.warn('Could not load collection history, falling back to manual ID', e);
+    }
+  }
+
+  // Fallback: no history endpoint available yet, ask for the collection ID directly.
+  label.textContent = 'Collection ID';
+  manualInput.style.display = 'block';
+}
+
+async function handleSubmit(){
+  const statusMsg = document.getElementById('statusMsg');
+  const submitBtn = document.getElementById('submitBtn');
+  const select = document.getElementById('collectionSelect');
+  const manualInput = document.getElementById('collectionIdInput');
+
+  const collectionId = Number(
+    select.style.display !== 'none' ? select.value : manualInput.value
+  );
+  const comment = document.getElementById('comment').value.trim();
+
+  statusMsg.className = 'status-msg';
+  statusMsg.textContent = '';
+
+  if (!collectionId){
+    statusMsg.textContent = 'Please select or enter a collection.';
+    statusMsg.classList.add('err');
+    return;
+  }
+  if (!selectedStars){
+    statusMsg.textContent = 'Please pick a star rating.';
+    statusMsg.classList.add('err');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+
+  try{
+    await window.api.submitFeedback(collectionId, selectedStars, comment);
+    statusMsg.textContent = 'Thanks for the feedback!';
+    statusMsg.classList.add('ok');
+    setTimeout(() => { window.location.href = 'home.html'; }, 1200);
+  } catch(e){
+    console.error('Feedback submit failed', e);
+    statusMsg.textContent = e.message || 'Could not submit feedback. Try again.';
+    statusMsg.classList.add('err');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Feedback';
+  }
+}
+
+initFeedbackForm();
+</script>
+</body>
+</html>
