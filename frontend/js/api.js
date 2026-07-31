@@ -66,7 +66,7 @@ function getDropoffByQR(qrCode) {
 
 function logCollection(payload) {
   const phone = payload.phone ?? localStorage.getItem("esetu_citizen_phone") ?? null;
-  const citizenId = payload.citizen_id ?? Number(localStorage.getItem("esetu_citizen_id")) || null;
+  const citizenId = payload.citizen_id ?? (Number(localStorage.getItem("esetu_citizen_id")) || null);
   const body = {
     ...payload,
     citizen_id: citizenId,
